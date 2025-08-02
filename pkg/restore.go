@@ -26,13 +26,14 @@ package pkg
 
 import (
 	"fmt"
+	"os"
+	"os/exec"
+	"path/filepath"
+
 	"github.com/jkaninda/encryptor"
 	"github.com/jkaninda/go-storage/pkg/local"
 	"github.com/jkaninda/mysql-bkup/utils"
 	"github.com/spf13/cobra"
-	"os"
-	"os/exec"
-	"path/filepath"
 )
 
 func StartRestore(cmd *cobra.Command) {
@@ -77,11 +78,13 @@ func localRestore(dbConf *dbConfig, restoreConf *RestoreConfig) {
 
 // RestoreDatabase restores the database from a backup file
 func RestoreDatabase(db *dbConfig, conf *RestoreConfig) {
+	storagePath = os.Getenv("STORAGE_PATH")
+
 	if conf.file == "" {
 		utils.Fatal("Error, file required")
 	}
 
-	filePath := filepath.Join(tmpPath, conf.file)
+	filePath := filepath.Join(storagePath, conf.file)
 	rFile, err := os.ReadFile(filePath)
 	if err != nil {
 		utils.Fatal("Error reading backup file: %v", err)

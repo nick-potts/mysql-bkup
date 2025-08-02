@@ -259,7 +259,7 @@ func BackupDatabase(db *dbConfig, backupFileName string, disableCompression, all
 		dumpArgs = append(dumpArgs, db.dbName)
 	}
 
-	backupPath := filepath.Join(tmpPath, backupFileName)
+	backupPath := filepath.Join(storagePath, backupFileName)
 	if disableCompression {
 		return runCommandAndSaveOutput("mysqldump", dumpArgs, backupPath)
 	}
