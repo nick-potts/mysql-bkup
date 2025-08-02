@@ -2,10 +2,13 @@ FROM golang:1.24.5 AS build
 WORKDIR /app
 ARG appVersion=""
 
-# Copy the source code.
-COPY . .
-# Installs Go dependencies
+# Copy go mod files first for better caching
+COPY go.mod go.sum ./
+# Download dependencies - this layer will be cached unless go.mod/go.sum change
 RUN go mod download
+
+# Copy the source code after downloading dependencies
+COPY . .
 
 # Build
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-X 'github.com/jkaninda/mysql-bkup/utils.Version=${appVersion}'" -o /app/mysql-bkup
@@ -14,7 +17,7 @@ FROM alpine:3.22.0
 ENV TZ=UTC
 ARG WORKDIR="/config"
 ARG BACKUPDIR="/backup"
-ARG BACKUP_TMP_DIR="/tmp/backup"
+ARG BACKUP_TMP_DIR="/backup"
 ARG TEMPLATES_DIR="/config/templates"
 ARG appVersion=""
 ENV VERSION=${appVersion}

@@ -29,7 +29,7 @@ import (
 	"time"
 )
 
-const tmpPath = "/tmp/backup"
+const tmpPath = "/backup"
 const gpgHome = "/config/gnupg"
 const gpgExtension = "gpg"
 const timeFormat = "2006-01-02 at 15:04:05"
