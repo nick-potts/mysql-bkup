@@ -269,12 +269,26 @@ func BackupDatabase(db *dbConfig, backupFileName string, disableCompression, all
 // runCommandAndSaveOutput runs a command and saves the output to a file
 func runCommandAndSaveOutput(command string, args []string, outputPath string) error {
 	cmd := exec.Command(command, args...)
-	output, err := cmd.Output()
+	
+	// Create output file
+	outFile, err := os.Create(outputPath)
 	if err != nil {
-		return fmt.Errorf("failed to execute %s: %v, output: %s", command, err, string(output))
+		return fmt.Errorf("failed to create output file: %w", err)
 	}
-
-	return os.WriteFile(outputPath, output, 0644)
+	defer outFile.Close()
+	
+	// Stream output directly to file
+	cmd.Stdout = outFile
+	
+	// Capture stderr for error reporting
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
+	
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("failed to execute %s: %v, stderr: %s", command, err, stderr.String())
+	}
+	
+	return nil
 }
 
 // runCommandWithCompression runs a command and compresses the output

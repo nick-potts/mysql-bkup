@@ -25,6 +25,7 @@ SOFTWARE.
 package pkg
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"os/exec"
@@ -85,16 +86,23 @@ func RestoreDatabase(db *dbConfig, conf *RestoreConfig) {
 	}
 
 	filePath := filepath.Join(storagePath, conf.file)
-	rFile, err := os.ReadFile(filePath)
-	if err != nil {
-		utils.Fatal("Error reading backup file: %v", err)
+	extension := filepath.Ext(filePath)
+	
+	// Check if file exists first
+	if !utils.FileExists(filePath) {
+		utils.Fatal("File not found: %s", filePath)
 	}
 
-	extension := filepath.Ext(filePath)
-	outputFile := RemoveLastExtension(filePath)
-
 	if extension == ".gpg" {
+		// Only read the file into memory if it needs decryption
+		rFile, err := os.ReadFile(filePath)
+		if err != nil {
+			utils.Fatal("Error reading backup file: %v", err)
+		}
+		outputFile := RemoveLastExtension(filePath)
 		decryptBackup(conf, rFile, outputFile)
+		// Update conf.file to point to decrypted file
+		conf.file = RemoveLastExtension(conf.file)
 	}
 
 	restorationFile := filepath.Join(storagePath, conf.file)
@@ -146,9 +154,14 @@ func restoreDatabaseFile(db *dbConfig, restorationFile string) {
 	}
 
 	cmd := exec.Command("sh", "-c", cmdStr)
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		utils.Fatal("Error restoring database: %v\nOutput: %s", err, string(output))
+	
+	// Stream stderr to capture errors without buffering all output
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
+	
+	// Run the command without capturing stdout (goes to /dev/null)
+	if err := cmd.Run(); err != nil {
+		utils.Fatal("Error restoring database: %v\nStderr: %s", err, stderr.String())
 	}
 
 	utils.Info("Database has been restored successfully.")
