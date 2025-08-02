@@ -97,7 +97,7 @@ func RestoreDatabase(db *dbConfig, conf *RestoreConfig) {
 		decryptBackup(conf, rFile, outputFile)
 	}
 
-	restorationFile := filepath.Join(tmpPath, conf.file)
+	restorationFile := filepath.Join(storagePath, conf.file)
 	if !utils.FileExists(restorationFile) {
 		utils.Fatal("File not found: %s", restorationFile)
 	}
